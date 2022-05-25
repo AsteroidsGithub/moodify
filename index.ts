@@ -1,7 +1,15 @@
 import axios from "axios";
 import { stringify } from "qs";
 
+// This will be filled in later by the token requests
 var authToken = "";
+
+// Referred to as "Valence" in spotify's API 
+// 0 represents sad, depressing, or negative mood 
+// 1 represents happy, cheerful, or positive mood
+const moodInt: number = 0;
+
+
 
 axios
   .post(
@@ -50,7 +58,8 @@ axios
               market: "US",
               seed_artists: tracks[0].artists[0].id,
               seed_tracks: tracks[0].id,
-              seed_genres: "pop",
+              seed_genres: "rap",
+              target_valence: moodInt,
             },
           })
           .then((res) => res.data)
