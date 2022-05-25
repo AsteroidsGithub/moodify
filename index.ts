@@ -1,6 +1,8 @@
 import axios from "axios";
 import { stringify } from "qs";
 
+var authToken = "";
+
 axios
   .post(
     "https://accounts.spotify.com/api/token",
@@ -18,24 +20,56 @@ axios
       },
     }
   )
-  .then((res) => res.data.access_token)
-  .then((res) =>
+  .then((res) => (authToken = res.data.access_token))
+  .then(() =>
     axios
-      .get("https://api.spotify.com/v1/recommendations", {
+      .get("https://api.spotify.com/v1/search", {
         headers: {
           Accepted: "application/json",
           "Content-Type": "application/json",
-          Authorization: `Bearer ${res}`,
+          Authorization: `Bearer ${authToken}`,
         },
         params: {
-          limit: "3",
-          market: "US",
-          seed_artists: "4NHQUGzhtTLFvgF5SZesLK",
-          seed_tracks: "0c6xIDDpzE81m2q797ordA",
-          seed_genres: "country",
+          limit: 1,
+          type: "track",
+          q: "Call out my Name",
         },
       })
-      .then((res) => console.log(res.data))
+
+      .then((res) => res.data.tracks.items)
+      .then((tracks) =>
+        axios
+          .get("https://api.spotify.com/v1/recommendations", {
+            headers: {
+              Accepted: "application/json",
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${authToken}`,
+            },
+            params: {
+              limit: "3",
+              market: "US",
+              seed_artists: tracks[0].artists[0].id,
+              seed_tracks: tracks[0].id,
+              seed_genres: "pop",
+            },
+          })
+          .then((res) => res.data)
+          .then((data) => {
+            console.log(
+              `From the song:\nhttps://open.spotify.com/track/${data.seeds[1].id}\nWith the Genre: ${data.seeds[2].id}\n`
+            );
+
+            data.tracks.map((track, index) =>
+              console.log(
+                `${index + 1}. ${track.name} - ${track.artists[0].name}\n${
+                  track.external_urls.spotify
+                }\n`
+              )
+            );
+          })
+
+          .catch((err) => console.log(err))
+      )
       .catch((err) => console.log(err))
   )
   .catch((err) => console.log(err));
