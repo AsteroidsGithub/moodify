@@ -61,6 +61,8 @@ const BaseStep: React.FC = () => {
           onChange={async (event) => {
             event.preventDefault();
 
+            if (event.target.value.length < 1) return setSearchResults([]);
+
             const { data } = await axios.get(
               "https://api.spotify.com/v1/search",
               {
@@ -76,9 +78,7 @@ const BaseStep: React.FC = () => {
               }
             );
 
-            setSearchResults(data.tracks.items);
-
-            console.log(data);
+            return setSearchResults(data.tracks.items);
           }}
           placeholder="Search for a song"
         />
