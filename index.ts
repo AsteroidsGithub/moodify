@@ -68,12 +68,20 @@ axios
               `From the song:\nhttps://open.spotify.com/track/${data.seeds[1].id}\nWith the Genre: ${data.seeds[2].id}\n`
             );
 
-            data.tracks.map((track, index) =>
-              console.log(
-                `${index + 1}. ${track.name} - ${track.artists[0].name}\n${
-                  track.external_urls.spotify
-                }\n`
-              )
+            data.tracks.map(
+              (
+                track: {
+                  name: any;
+                  artists: { name: any }[];
+                  external_urls: { spotify: any };
+                },
+                index: number
+              ) =>
+                console.log(
+                  `${index + 1}. ${track.name} - ${track.artists[0].name}\n${
+                    track.external_urls.spotify
+                  }\n`
+                )
             );
           })
 
