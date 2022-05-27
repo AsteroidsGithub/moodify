@@ -37,4 +37,6 @@ export interface SpotifyTrackProperties {
     tempo: number;
 }
 
+
+
 export type TrackProperty = keyof SpotifyTrackProperties;

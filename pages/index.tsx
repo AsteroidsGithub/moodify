@@ -133,7 +133,7 @@ const CharacterStep: React.FC = () => {
       <div className="flex flex-col space-y-2">
         <h2>Emotion</h2>
 
-        <PropertySlider property="valence" minLabel="Sad" maxLabel="Happy" />
+        <PropertySlider title="Mood" property="valence" minLabel="Sad" maxLabel="Happy" />
         <PropertySlider property="liveness" minLabel="Low" maxLabel="High" />
 
         <h2>Pace</h2>

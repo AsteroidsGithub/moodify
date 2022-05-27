@@ -14,15 +14,13 @@ const PropertySlider: React.FC<{
 
   return (
     <div className="flex flex-col space-y-2">
-      <h3>
-        {title || (property && property[0].toUpperCase() + property.slice(1))}:{' '}
-        {musicProperties[property as TrackProperty]}
-      </h3>
+      <h3>{title || (property && property[0].toUpperCase() + property.slice(1))}</h3>
+
       <div className="flex space-x-2">
         <label>{minLabel}</label>
         <input
           type="range"
-          className="flex-grow"
+          className="flex-grow accent-yellow-400 caret-yellow-600 outline-yellow-500"
           id={property}
           value={musicProperties[property as TrackProperty]}
           onChange={(event) =>
