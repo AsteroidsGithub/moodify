@@ -4,91 +4,127 @@ import { stringify } from "qs";
 import { useEffect, useState } from "react";
 import { useBetween } from "use-between";
 
-const useFormState = () => {
-  const [formStep, setFormStep] = useState(0);
-  const [authToken, setAuthToken] = useState("");
-  const [searchResults, setSearchResults] = useState<
+interface SpotifyTrack {
+  id: string;
+  name: string;
+  duration_ms: number;
+  popularity: number;
+  artists: [
     {
       id: string;
       name: string;
-      duration_ms: number;
-      popularity: number;
-      artist: {
-        id: string;
-        name: string;
-      };
-      album: {
-        id: string;
-        name: string;
-        album_type: "album" | "single" | "compilation";
-        release_date: string;
-        images: [
-          {
-            url: string;
-            width: number;
-            height: number;
-          }
-        ];
-      };
-    }[]
-  >([]);
+    }
+  ];
+  album: {
+    id: string;
+    name: string;
+    album_type: "album" | "single" | "compilation";
+    release_date: string;
+    images: [
+      {
+        url: string;
+        width: number;
+        height: number;
+      }
+    ];
+  };
+}
+
+const useFormState = () => {
+  const [formStep, setFormStep] = useState(0);
+  const [authToken, setAuthToken] = useState("");
+
+  const [seedTracks, setSeedTracks] = useState<SpotifyTrack[]>([]);
 
   return {
     formStep,
     setFormStep,
     authToken,
     setAuthToken,
-    searchResults,
-    setSearchResults,
+    seedTracks,
+    setSeedTracks,
   };
 };
 
 const useSharedState = () => useBetween(useFormState);
 
 const BaseStep: React.FC = () => {
-  const { authToken, searchResults, setSearchResults } = useSharedState();
+  const { authToken, seedTracks, setSeedTracks } = useSharedState();
+  const [searchResults, setSearchResults] = useState<SpotifyTrack[]>([]);
+
+  const handleSeedTrackChange = (track: SpotifyTrack) => {
+    seedTracks.find((t) => t.id === track.id)
+      ? seedTracks.splice(seedTracks.indexOf(track), 1)
+      : seedTracks.push(track);
+    setSeedTracks([...seedTracks]);
+  };
+
   return (
-    <div>
+    <div className="p-4">
       <h1>Let's get a taste of what you like</h1>
-      <h3>
+      <h2>
         Please select upto 5 Songs, Artists and Genres that you're enjoying
         right now so we can tailor our results
-      </h3>
+      </h2>
 
-      <div>
-        <input
-          type="text"
-          onChange={async (event) => {
-            event.preventDefault();
+      <input
+        type="text"
+        className="w-full bg-gray-100 p-2 my-2"
+        onChange={async (event) => {
+          event.preventDefault();
 
-            if (event.target.value.length < 1) return setSearchResults([]);
+          if (event.target.value.length < 1) return setSearchResults([]);
 
-            const { data } = await axios.get(
-              "https://api.spotify.com/v1/search",
-              {
-                headers: {
-                  Authorization: `Bearer ${authToken}`,
-                  "Content-Type": "application/json",
-                },
+          const { data } = await axios.get(
+            "https://api.spotify.com/v1/search",
+            {
+              headers: {
+                Authorization: `Bearer ${authToken}`,
+                "Content-Type": "application/json",
+              },
 
-                params: {
-                  type: "track",
-                  q: event.target.value,
-                },
-              }
-            );
+              params: {
+                limit: 5,
+                type: "track",
+                q: event.target.value,
+              },
+            }
+          );
 
-            return setSearchResults(data.tracks.items);
-          }}
-          placeholder="Search for a song"
-        />
+          return setSearchResults(data.tracks.items);
+        }}
+        placeholder="Search for a song"
+      />
+
+      <div className="space-y-2">
+        {seedTracks.map((track) => (
+          <div
+            className="flex h-16 bg-yellow-300"
+            onClick={() => handleSeedTrackChange(track)}
+          >
+            <img src={track.album.images[0].url} />
+            <div className="flex flex-col px-2">
+              <h3>{track.name}</h3>
+              <p>{track.artists[0].name}</p>
+            </div>
+          </div>
+        ))}
+
+        {searchResults
+          .filter((track) => !seedTracks.find((t) => t.id === track.id))
+          .map((track) => (
+            <div
+              className="flex h-16"
+              onClick={() => handleSeedTrackChange(track)}
+            >
+              <img src={track.album.images[0].url} />
+              <div className="flex flex-col px-2">
+                <h3>{track.name}</h3>
+                <p>{track.artists[0].name}</p>
+              </div>
+            </div>
+          ))}
       </div>
-      {searchResults.map((track) => (
-        <div>
-          <h3>{track.name}</h3>
-          <img src={track.album.images[0].url} />
-        </div>
-      ))}
     </div>
   );
 };
@@ -164,10 +200,10 @@ const ResultsStep: React.FC = () => {
   return (
     <div>
       <h1>and... TADA!</h1>
-      <h3>
+      <h2>
         We've got your recommendations, here are some of the songs that fit what
         you want to listen to
-      </h3>
+      </h2>
     </div>
   );
 };
@@ -180,23 +216,35 @@ const Home: NextPage<{
   useEffect(() => setAuthToken(authToken), [authToken]);
 
   return (
-    <>
-      {
+    <div className=" flex-col h-screen w-screen">
+      <div className="flex-grow">
         {
-          0: <BaseStep />,
-          1: <CharacterStep />,
-          2: <ResultsStep />,
-        }[formStep]
-      }
-      <div>
+          {
+            0: <BaseStep />,
+            1: <CharacterStep />,
+            2: <ResultsStep />,
+          }[formStep]
+        }
+      </div>
+      <div className="fixed  bottom-0 flex  w-full space-x-1 px-1 pb-1">
         {formStep > 0 && (
-          <button onClick={() => setFormStep(formStep - 1)}>Back</button>
+          <button
+            className="bg-yellow-600 font-medium flex-grow py-2 text-lg w-1/2"
+            onClick={() => setFormStep(formStep - 1)}
+          >
+            Back
+          </button>
         )}
         {formStep < 2 && (
-          <button onClick={() => setFormStep(formStep + 1)}>Next</button>
+          <button
+            className="bg-yellow-400 font-medium py-2 flex-grow text-lg w-1/2"
+            onClick={() => setFormStep(formStep + 1)}
+          >
+            Next
+          </button>
         )}
       </div>
-    </>
+    </div>
   );
 };
 
