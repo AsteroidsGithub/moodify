@@ -204,6 +204,8 @@ const ResultsStep: React.FC = () => {
     useSharedState();
   useEffect(() => {
     const fetchRecommendations = async () => {
+      console.log(seedTracks.map((t) => t.artists[0].id).join(","));
+      console.log(seedTracks.map((t) => t.id).join(","));
       const { data } = await axios.get(
         "https://api.spotify.com/v1/recommendations",
         {
@@ -212,7 +214,7 @@ const ResultsStep: React.FC = () => {
             Authorization: `Bearer ${authToken}`,
           },
           params: {
-            limit: "3",
+            limit: 20,
             market: "US",
             seed_artists: seedTracks.map((t) => t.artists[0].id).join(","),
             seed_tracks: seedTracks.map((t) => t.id).join(","),
@@ -224,7 +226,7 @@ const ResultsStep: React.FC = () => {
       setRecommendations(data.tracks);
     };
     fetchRecommendations();
-  }, []);
+  }, [seedTracks]);
 
   return (
     <div>
@@ -233,9 +235,7 @@ const ResultsStep: React.FC = () => {
         We've got your recommendations, here are some of the songs that fit what
         you want to listen to
       </h2>
-      {recommendations.length < 1 && (
-        <button onClick={async () => {}}>Fetch Results</button>
-      )}
+
       {recommendations.map((track) => (
         <div className="flex h-16">
           <img src={track.album.images[0].url} />
