@@ -35,6 +35,7 @@ const useFormState = () => {
   const [authToken, setAuthToken] = useState("");
 
   const [seedTracks, setSeedTracks] = useState<SpotifyTrack[]>([]);
+  const [recommendations, setRecommendations] = useState<SpotifyTrack[]>([]);
 
   return {
     formStep,
@@ -43,6 +44,8 @@ const useFormState = () => {
     setAuthToken,
     seedTracks,
     setSeedTracks,
+    recommendations,
+    setRecommendations,
   };
 };
 
@@ -84,7 +87,7 @@ const BaseStep: React.FC = () => {
               },
 
               params: {
-                limit: 5,
+                limit: 20,
                 type: "track",
                 q: event.target.value,
               },
@@ -197,6 +200,32 @@ const CharacterStep: React.FC = () => {
 };
 
 const ResultsStep: React.FC = () => {
+  const { authToken, seedTracks, setRecommendations, recommendations } =
+    useSharedState();
+  useEffect(() => {
+    const fetchRecommendations = async () => {
+      const { data } = await axios.get(
+        "https://api.spotify.com/v1/recommendations",
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${authToken}`,
+          },
+          params: {
+            limit: "3",
+            market: "US",
+            seed_artists: seedTracks.map((t) => t.artists[0].id).join(","),
+            seed_tracks: seedTracks.map((t) => t.id).join(","),
+            seed_genres: "rap",
+            target_valence: 0.5,
+          },
+        }
+      );
+      setRecommendations(data.tracks);
+    };
+    fetchRecommendations();
+  }, []);
+
   return (
     <div>
       <h1>and... TADA!</h1>
@@ -204,6 +233,18 @@ const ResultsStep: React.FC = () => {
         We've got your recommendations, here are some of the songs that fit what
         you want to listen to
       </h2>
+      {recommendations.length < 1 && (
+        <button onClick={async () => {}}>Fetch Results</button>
+      )}
+      {recommendations.map((track) => (
+        <div className="flex h-16">
+          <img src={track.album.images[0].url} />
+          <div className="flex flex-col px-2">
+            <h3>{track.name}</h3>
+            <p>{track.artists[0].name}</p>
+          </div>
+        </div>
+      ))}
     </div>
   );
 };
@@ -229,7 +270,7 @@ const Home: NextPage<{
       <div className="fixed  bottom-0 flex  w-full space-x-1 px-1 pb-1">
         {formStep > 0 && (
           <button
-            className="bg-yellow-600 font-medium flex-grow py-2 text-lg w-1/2"
+            className="bg-yellow-500 font-medium flex-grow py-2 text-lg w-1/2"
             onClick={() => setFormStep(formStep - 1)}
           >
             Back
