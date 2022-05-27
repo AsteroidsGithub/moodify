@@ -35,6 +35,27 @@ const useFormState = () => {
   const [authToken, setAuthToken] = useState("");
 
   const [seedTracks, setSeedTracks] = useState<SpotifyTrack[]>([]);
+  const [seedGenre, setSeedGenre] = useState<string[]>([]);
+
+  const [musicProperties, setMusicProperties] = useState<{
+    danceability: number;
+    energy: number;
+    acousticness: number;
+    instrumentalness: number;
+    liveness: number;
+    speechiness: number;
+    valence: number;
+    tempo: number;
+  }>({
+    danceability: 0,
+    energy: 0,
+    acousticness: 0,
+    instrumentalness: 0,
+    liveness: 0,
+    speechiness: 0,
+    valence: 0,
+    tempo: 0,
+  });
   const [recommendations, setRecommendations] = useState<SpotifyTrack[]>([]);
 
   return {
@@ -44,6 +65,10 @@ const useFormState = () => {
     setAuthToken,
     seedTracks,
     setSeedTracks,
+    seedGenre,
+    setSeedGenre,
+    musicProperties,
+    setMusicProperties,
     recommendations,
     setRecommendations,
   };
@@ -65,10 +90,10 @@ const BaseStep: React.FC = () => {
   return (
     <div className="p-4">
       <h1>Let's get a taste of what you like</h1>
-      <h2>
-        Please select upto 5 Songs, Artists and Genres that you're enjoying
-        right now so we can tailor our results
-      </h2>
+      <p>
+        Please select upto 5 Songs that you're enjoying right now so we can
+        tailor our results
+      </p>
 
       <input
         type="text"
@@ -133,75 +158,236 @@ const BaseStep: React.FC = () => {
 };
 
 const CharacterStep: React.FC = () => {
+  const {
+    authToken,
+    setSeedGenre,
+    seedGenre,
+    musicProperties,
+    setMusicProperties,
+  } = useSharedState();
+
+  const [searchResults, setSearchResults] = useState<string[]>([]);
+  const [selectedGenres, setSelectedGenres] = useState<string[]>([]);
+
+  const handleGenreSelect = (genre: string) => {
+    seedGenre.find((g) => g === genre)
+      ? seedGenre.splice(seedGenre.indexOf(genre), 1)
+      : seedGenre.push(genre);
+    setSeedGenre([...seedGenre]);
+  };
+
   return (
-    <div>
+    <div className="p-4">
       <h1>How should our recommendations sound?</h1>
-      <h2>
+      <p>
         Adjust the sliders to find the perfect mood, tempo, and energy for you
-      </h2>
-
-      <h3>Mood</h3>
-      <div>
-        <label>Angry</label>
+      </p>
+      <div className="my-2">
+        <h2>Genre</h2>
         <input
-          type="range"
-          id="mood"
-          defaultValue="0.5"
-          min="0"
-          max="1"
-          step="0.01"
-        ></input>
-        <label>Happy</label>
+          type="text"
+          className="w-full bg-gray-100 p-2 my-2"
+          onChange={async (event) => {
+            event.preventDefault();
+
+            if (event.target.value.length < 1) return setSearchResults([]);
+
+            const { data } = await axios.get(
+              "https://api.spotify.com/v1/recommendations/available-genre-seeds",
+              {
+                headers: {
+                  Authorization: `Bearer ${authToken}`,
+                  "Content-Type": "application/json",
+                },
+              }
+            );
+
+            return setSearchResults(
+              data.genres.filter((g: string) =>
+                g.startsWith(event.target.value)
+              )
+            );
+          }}
+          placeholder="Search for a song"
+        />
+        <ul>
+          {seedGenre.map((genre) => (
+            <li
+              className="bg-yellow-300"
+              onClick={() => handleGenreSelect(genre)}
+            >
+              {genre}
+            </li>
+          ))}
+          {searchResults.slice(0, 5).map((genre) => (
+            <li onClick={() => handleGenreSelect(genre)}>{genre}</li>
+          ))}
+        </ul>
       </div>
 
-      <h3>Energy</h3>
-      <div>
-        <label>Low</label>
-        <input
-          type="range"
-          id="energy"
-          defaultValue="0.5"
-          min="0"
-          max="1"
-          step="0.01"
-        ></input>
-        <label>High</label>
+      <div className="my-2">
+        <h2>Emotion</h2>
+
+        <h3>Mood</h3>
+        <div>
+          <label>Angry</label>
+          <input
+            type="range"
+            id="mood"
+            value={musicProperties.valence}
+            onChange={(event) =>
+              setMusicProperties({
+                ...musicProperties,
+                valence: parseFloat(event.target.value),
+              })
+            }
+            min="0"
+            max="1"
+            step="0.01"
+          ></input>
+          <label>Happy</label>
+        </div>
+
+        <h3>Liveness</h3>
+        <div>
+          <label>Low</label>
+          <input
+            type="range"
+            id="mood"
+            value={musicProperties.liveness}
+            onChange={(event) =>
+              setMusicProperties({
+                ...musicProperties,
+                liveness: parseFloat(event.target.value),
+              })
+            }
+            min="0"
+            max="1"
+            step="0.01"
+          ></input>
+          <label>High</label>
+        </div>
       </div>
 
-      <h3>Instrumentalness</h3>
-      <div>
-        <label>Low</label>
-        <input
-          type="range"
-          id="instrumentalness"
-          defaultValue="0.5"
-          min="0"
-          max="1"
-          step="0.01"
-        ></input>
-        <label>High</label>
+      <div className="my-2">
+        <h2>Pace</h2>
+
+        <h3>Energy</h3>
+        <div>
+          <label>Low</label>
+          <input
+            type="range"
+            id="energy"
+            value={musicProperties.energy}
+            onChange={(event) =>
+              setMusicProperties({
+                ...musicProperties,
+                energy: parseFloat(event.target.value),
+              })
+            }
+            min="0"
+            max="1"
+            step="0.01"
+          ></input>
+          <label>High</label>
+        </div>
+        <h3>BPM</h3>
+        <div>
+          <label>60</label>
+          <input
+            type="range"
+            id="bpm"
+            value={musicProperties.tempo}
+            onChange={(event) =>
+              setMusicProperties({
+                ...musicProperties,
+                tempo: parseFloat(event.target.value),
+              })
+            }
+            min="60"
+            max="180"
+            step="1"
+          ></input>
+          <label>180</label>
+        </div>
       </div>
 
-      <h3>BPM</h3>
-      <div>
-        <label>60</label>
-        <input
-          type="range"
-          id="bpm"
-          defaultValue="120"
-          min="60"
-          max="180"
-          step="1"
-        ></input>
-        <label>180</label>
+      <div className="my-2">
+        <h2>Sound</h2>
+
+        <h3>Instrumentalness</h3>
+        <div>
+          <label>Low</label>
+          <input
+            type="range"
+            id="instrumentalness"
+            value={musicProperties.instrumentalness}
+            onChange={(event) =>
+              setMusicProperties({
+                ...musicProperties,
+                instrumentalness: parseFloat(event.target.value),
+              })
+            }
+            min="0"
+            max="1"
+            step="0.01"
+          ></input>
+          <label>High</label>
+        </div>
+
+        <h3>Acousticness</h3>
+        <div>
+          <label>Low</label>
+          <input
+            type="range"
+            id="instrumentalness"
+            value={musicProperties.acousticness}
+            onChange={(event) =>
+              setMusicProperties({
+                ...musicProperties,
+                acousticness: parseFloat(event.target.value),
+              })
+            }
+            min="0"
+            max="1"
+            step="0.01"
+          ></input>
+          <label>High</label>
+        </div>
+
+        <h3>Speechiness</h3>
+        <div>
+          <label>Low</label>
+          <input
+            type="range"
+            id="instrumentalness"
+            value={musicProperties.speechiness}
+            onChange={(event) =>
+              setMusicProperties({
+                ...musicProperties,
+                speechiness: parseFloat(event.target.value),
+              })
+            }
+            min="0"
+            max="1"
+            step="0.01"
+          ></input>
+          <label>High</label>
+        </div>
       </div>
     </div>
   );
 };
 
 const ResultsStep: React.FC = () => {
-  const { authToken, seedTracks, setRecommendations, recommendations } =
-    useSharedState();
+  const {
+    authToken,
+    seedTracks,
+    seedGenre,
+    musicProperties,
+    setRecommendations,
+    recommendations,
+  } = useSharedState();
   useEffect(() => {
     const fetchRecommendations = async () => {
       console.log(seedTracks.map((t) => t.artists[0].id).join(","));
@@ -218,8 +404,14 @@ const ResultsStep: React.FC = () => {
             market: "US",
             seed_artists: seedTracks.map((t) => t.artists[0].id).join(","),
             seed_tracks: seedTracks.map((t) => t.id).join(","),
-            seed_genres: "rap",
-            target_valence: 0.5,
+            seed_genres: seedGenre.join(","),
+            target_valence: musicProperties.valence,
+            target_energy: musicProperties.energy,
+            target_liveness: musicProperties.liveness,
+            target_acousticness: musicProperties.acousticness,
+            target_instrumentalness: musicProperties.instrumentalness,
+            target_speechiness: musicProperties.speechiness,
+            target_tempo: musicProperties.tempo,
           },
         }
       );
@@ -229,12 +421,12 @@ const ResultsStep: React.FC = () => {
   }, [seedTracks]);
 
   return (
-    <div>
+    <div className="p-4">
       <h1>and... TADA!</h1>
-      <h2>
+      <p>
         We've got your recommendations, here are some of the songs that fit what
         you want to listen to
-      </h2>
+      </p>
 
       {recommendations.map((track) => (
         <div className="flex h-16">

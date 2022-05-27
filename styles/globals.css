@@ -7,10 +7,10 @@
   }
 
   h2 {
-    @apply font-normal
+    @apply text-xl font-bold mb-1
   }
 
   h3 {
-    @apply font-bold
+    @apply font-semibold
   }
 }
