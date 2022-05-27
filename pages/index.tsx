@@ -493,8 +493,8 @@ export const getServerSideProps = async () => {
         "Content-Type": "application/x-www-form-urlencoded",
       },
       auth: {
-        username: "545a4de4f8b4437cb20eae874f4d9550",
-        password: "b214499792fa4c98863e90612a5065f5",
+        username: process.env.SPOTIFY_ID ?? "",
+        password: process.env.SPOTIFY_SECRET ?? "",
       },
     }
   );
