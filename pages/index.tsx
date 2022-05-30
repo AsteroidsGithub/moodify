@@ -18,37 +18,41 @@ const BaseStep: React.FC = () => {
   };
 
   return (
-    <div className="p-4">
-      <h1>Let's get a taste of what you like</h1>
-      <p>Please select upto 5 Songs that you're enjoying right now so we can tailor our results</p>
+    <>
+      <div className="flex flex-col">
+        <h1>Let's get a taste of what you like</h1>
+        <p>
+          Please select upto 5 Songs that you're enjoying right now so we can tailor our results
+        </p>
 
-      <input
-        type="text"
-        className="w-full bg-gray-100 p-2 my-2"
-        onChange={async (event) => {
-          event.preventDefault();
+        <input
+          type="text"
+          className="w-full bg-gray-100 p-2 my-2"
+          onChange={async (event) => {
+            event.preventDefault();
 
-          if (event.target.value.length < 1) return setSearchResults([]);
+            if (event.target.value.length < 1) return setSearchResults([]);
 
-          const { data } = await axios.get('https://api.spotify.com/v1/search', {
-            headers: {
-              Authorization: `Bearer ${authToken}`,
-              'Content-Type': 'application/json',
-            },
+            const { data } = await axios.get('https://api.spotify.com/v1/search', {
+              headers: {
+                Authorization: `Bearer ${authToken}`,
+                'Content-Type': 'application/json',
+              },
 
-            params: {
-              limit: 20,
-              type: 'track',
-              q: event.target.value,
-            },
-          });
+              params: {
+                limit: 20,
+                type: 'track',
+                q: event.target.value,
+              },
+            });
 
-          return setSearchResults(data.tracks.items);
-        }}
-        placeholder="Search for a song"
-      />
+            return setSearchResults(data.tracks.items);
+          }}
+          placeholder="Search for a song"
+        />
+      </div>
 
-      <div className="space-y-2">
+      <div className="space-y-2 flex-shrink overflow-y-auto">
         {seedTracks.map((track) => (
           <div className="flex h-16 bg-yellow-300" onClick={() => handleSeedTrackChange(track)}>
             <img src={track.album.images[0].url} />
@@ -71,14 +75,12 @@ const BaseStep: React.FC = () => {
             </div>
           ))}
       </div>
-    </div>
+    </>
   );
 };
 
 const CharacterStep: React.FC = () => {
-  const { authToken, setSeedGenre, seedGenre, musicProperties, setMusicProperties } =
-    useSharedState();
-
+  const { authToken, setSeedGenre, seedGenre } = useSharedState();
   const [searchResults, setSearchResults] = useState<string[]>([]);
 
   const handleGenreSelect = (genre: string) => {
@@ -89,7 +91,7 @@ const CharacterStep: React.FC = () => {
   };
 
   return (
-    <div className="p-4">
+    <>
       <h1>How should our recommendations sound?</h1>
       <p>Adjust the sliders to find the perfect mood, tempo, and energy for you</p>
       <div className="my-2">
@@ -154,69 +156,59 @@ const CharacterStep: React.FC = () => {
         <PropertySlider property="acousticness" minLabel="Low" maxLabel="High" />
         <PropertySlider property="speechiness" minLabel="Low" maxLabel="High" />
       </div>
-    </div>
+    </>
   );
 };
 
 const ResultsStep: React.FC = () => {
-  const {
-    authToken,
-    seedTracks,
-    seedGenre,
-    musicProperties,
-    setRecommendations,
-    recommendations,
-  } = useSharedState();
+  const { authToken, seedTracks, seedGenre, musicProperties, setRecommendations, recommendations } =
+    useSharedState();
   useEffect(() => {
     const fetchRecommendations = async () => {
-      console.log(seedTracks.map((t) => t.artists[0].id).join(","));
-      console.log(seedTracks.map((t) => t.id).join(","));
-      const { data } = await axios.get(
-        "https://api.spotify.com/v1/recommendations",
-        {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${authToken}`,
-          },
-          params: {
-            limit: 20,
-            market: "US",
-            seed_artists: seedTracks.map((t) => t.artists[0].id).join(","),
-            seed_tracks: seedTracks.map((t) => t.id).join(","),
-            seed_genres: seedGenre.join(","),
-            target_valence: musicProperties.valence,
-            target_energy: musicProperties.energy,
-            target_liveness: musicProperties.liveness,
-            target_acousticness: musicProperties.acousticness,
-            target_instrumentalness: musicProperties.instrumentalness,
-            target_speechiness: musicProperties.speechiness,
-            target_tempo: musicProperties.tempo,
-          },
-        }
-      );
+      const { data } = await axios.get('https://api.spotify.com/v1/recommendations', {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${authToken}`,
+        },
+        params: {
+          limit: 20,
+          market: 'US',
+          seed_artists: seedTracks.map((t) => t.artists[0].id).join(','),
+          seed_tracks: seedTracks.map((t) => t.id).join(','),
+          seed_genres: seedGenre.join(','),
+          target_valence: musicProperties.valence,
+          target_energy: musicProperties.energy,
+          target_liveness: musicProperties.liveness,
+          target_acousticness: musicProperties.acousticness,
+          target_instrumentalness: musicProperties.instrumentalness,
+          target_speechiness: musicProperties.speechiness,
+          target_tempo: musicProperties.tempo,
+        },
+      });
       setRecommendations(data.tracks);
     };
     fetchRecommendations();
   }, [seedTracks]);
 
   return (
-    <div className="p-4">
+    <>
       <h1>and... TADA!</h1>
       <p>
-        We've got your recommendations, here are some of the songs that fit what
-        you want to listen to
+        We've got your recommendations, here are some of the songs that fit what you want to listen
+        to
       </p>
-
-      {recommendations.map((track) => (
-        <div className="flex h-16">
-          <img src={track.album.images[0].url} />
-          <div className="flex flex-col px-2">
-            <h3>{track.name}</h3>
-            <p>{track.artists[0].name}</p>
+      <div className="overflow-y-scroll">
+        {recommendations.map((track) => (
+          <div className="flex h-16">
+            <img src={track.album.images[0].url} />
+            <div className="flex flex-col px-2">
+              <h3>{track.name}</h3>
+              <p>{track.artists[0].name}</p>
+            </div>
           </div>
-        </div>
-      ))}
-    </div>
+        ))}
+      </div>
+    </>
   );
 };
 
@@ -228,8 +220,8 @@ const Home: NextPage<{
   useEffect(() => setAuthToken(authToken), [authToken]);
 
   return (
-    <div className=" flex-col h-screen w-screen">
-      <div className="flex-grow">
+    <div className=" h-view w-screen">
+      <div className="flex flex-grow flex-col max-h-full px-4 pt-4 pb-14">
         {
           {
             0: <BaseStep />,
@@ -238,10 +230,11 @@ const Home: NextPage<{
           }[formStep]
         }
       </div>
-      <div className="fixed  bottom-0 flex  w-full space-x-1 px-1 pb-1">
+
+      <div className="bottom-0 grid fixed w-full space-x-1 p-1 h-11 bg-white grid-cols-2 grid-rows-1">
         {formStep > 0 && (
           <button
-            className="bg-yellow-500 font-medium flex-grow py-2 text-lg w-1/2"
+            className="col-start-1 bg-yellow-500 font-medium flex-grow py-2 text-lg w-full"
             onClick={() => setFormStep(formStep - 1)}
           >
             Back
@@ -249,7 +242,7 @@ const Home: NextPage<{
         )}
         {formStep < 2 && (
           <button
-            className="bg-yellow-400 font-medium py-2 flex-grow text-lg w-1/2"
+            className="col-start-2 bg-yellow-400 font-medium py-2 flex-grow text-lg w-full"
             onClick={() => setFormStep(formStep + 1)}
           >
             Next
